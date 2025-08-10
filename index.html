@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shan Harold - Interactive Resume</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: A single-page, top-to-bottom narrative structure was chosen to guide the user through a story of qualification and experience. It starts with a high-level summary (Hero), moves to a quantifiable skills overview (Interactive Chart), then presents a chronological journey that users can filter (Interactive Timeline), and finally provides details on demand (Project Modals). This is more engaging than a static document and allows recruiters to quickly access the information most relevant to them, enhancing usability. -->
+    <!-- Visualization & Content Choices: 
+        - Technical Skills -> Goal: Compare/Inform -> Viz: Radar Chart -> Interaction: Hover Tooltips -> Justification: Provides a quick, memorable visual summary of skill distribution, which is more engaging than a list. -> Library: Chart.js.
+        - Experience (Research, Projects, Training) -> Goal: Organize/Change -> Viz: Vertical Timeline (HTML/CSS) -> Interaction: Filter buttons (JS) to show/hide categories -> Justification: Unifies disparate experiences into a single chronological story, showing growth over time. Filtering allows users to focus on specific areas like "Research". -> Library/Method: Vanilla JS + Tailwind.
+        - Project Details -> Goal: Inform -> Viz: Modal Windows -> Interaction: Click on a project card -> Justification: Keeps the main view uncluttered while providing deep-dive information on demand. -> Library/Method: Vanilla JS + Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F5F4; /* Warm Stone 100 */
+            color: #1c1917; /* Warm Stone 900 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #4f46e5; /* Indigo 600 */
+            border-bottom-color: #4f46e5;
+        }
+        .filter-btn {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .filter-btn.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .timeline-item {
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-stone-100/80 backdrop-blur-md sticky top-0 z-40 w-full border-b border-stone-200">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="#hero" class="text-2xl font-bold text-stone-800">Shan Harold</a>
+                </div>
+                <nav class="hidden md:flex md:space-x-8">
+                    <a href="#skills" class="nav-link text-stone-600 font-medium pb-1">Skills</a>
+                    <a href="#experience" class="nav-link text-stone-600 font-medium pb-1">Experience</a>
+                    <a href="#projects" class="nav-link text-stone-600 font-medium pb-1">Projects</a>
+                    <a href="#education" class="nav-link text-stone-600 font-medium pb-1">Education</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+
+        <!-- Hero Section -->
+        <section id="hero" class="text-center mb-20">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-stone-900 mb-4">Shan Harold</h1>
+            <p class="max-w-3xl mx-auto text-lg md:text-xl text-stone-600 mb-8">
+                Third-year Computer Science student with demonstrated experience in machine learning, software development, and academic research. Passionate about developing solutions for real-world, large-scale problems and contributing to innovative research in HCI and AI.
+            </p>
+            <div class="flex justify-center space-x-4">
+                <a href="mailto:shanharoldk@gmail.com" class="bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Contact Me</a>
+                <a href="https://github.com/shanharold" target="_blank" class="bg-stone-200 text-stone-800 font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-stone-300 transition-colors">View GitHub</a>
+            </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section id="skills" class="mb-20">
+            <h2 class="text-3xl font-bold text-center mb-4">Technical Skills</h2>
+            <p class="text-lg text-stone-600 text-center max-w-2xl mx-auto mb-10">
+                This chart provides a visual overview of my core competencies. Hover over any point to see the specific technologies and libraries I've worked with in each area.
+            </p>
+            <div class="chart-container">
+                <canvas id="skillsChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Experience Timeline Section -->
+        <section id="experience" class="mb-20">
+            <h2 class="text-3xl font-bold text-center mb-4">My Journey</h2>
+            <p class="text-lg text-stone-600 text-center max-w-2xl mx-auto mb-10">
+                Explore my progression through research, hands-on projects, and professional development. Use the filters to focus on the areas that interest you most.
+            </p>
+            <div id="timeline-filters" class="flex justify-center space-x-2 mb-12">
+                <button data-filter="all" class="filter-btn active font-medium px-4 py-2 rounded-full border border-stone-300">All</button>
+                <button data-filter="research" class="filter-btn font-medium px-4 py-2 rounded-full border border-stone-300">Research</button>
+                <button data-filter="project" class="filter-btn font-medium px-4 py-2 rounded-full border border-stone-300">Projects</button>
+                <button data-filter="training" class="filter-btn font-medium px-4 py-2 rounded-full border border-stone-300">Training</button>
+            </div>
+            <div id="timeline-container" class="relative max-w-3xl mx-auto">
+                <!-- Vertical line -->
+                <div class="absolute left-4 md:left-1/2 top-0 h-full w-0.5 bg-stone-300"></div>
+                <!-- Timeline items will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Featured Projects Section -->
+        <section id="projects" class="mb-20">
+            <h2 class="text-3xl font-bold text-center mb-4">Featured Projects</h2>
+            <p class="text-lg text-stone-600 text-center max-w-2xl mx-auto mb-10">
+                Here are some of the key projects I've developed, showcasing my ability to apply technology to solve complex problems. Click on any project to learn more.
+            </p>
+            <div id="projects-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Project cards will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Education & Certifications Section -->
+        <section id="education" class="mb-20">
+            <h2 class="text-3xl font-bold text-center mb-12">Education & Certifications</h2>
+            <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-10">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-2">Education</h3>
+                    <p class="text-lg font-semibold text-indigo-600">College of Engineering Trivandrum (CET)</p>
+                    <p class="text-stone-700">Bachelor of Technology, Computer Science and Engineering</p>
+                    <p class="text-stone-500">Expected Graduation: 2027</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-bold mb-2">Certifications</h3>
+                    <ul class="list-disc list-inside text-stone-700 space-y-1">
+                        <li>Solid Edge Associate Certification | Siemens</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-stone-800 text-stone-300">
+        <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+            <p class="mb-4">Let's connect and build something amazing.</p>
+            <div class="flex justify-center space-x-6">
+                <a href="mailto:shanharoldk@gmail.com" class="hover:text-white transition-colors">Email</a>
+                <a href="https://linkedin.com/in/shanharold" target="_blank" class="hover:text-white transition-colors">LinkedIn</a>
+                <a href="https://github.com/shanharold" target="_blank" class="hover:text-white transition-colors">GitHub</a>
+                <a href="https://shanharold.vercel.app" target="_blank" class="hover:text-white transition-colors">Portfolio</a>
+            </div>
+            <p class="mt-8 text-sm text-stone-500">&copy; 2025 Shan Harold. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Modal Structure -->
+    <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content transform scale-95">
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <h3 id="modal-title" class="text-2xl font-bold"></h3>
+                    <button id="modal-close-btn" class="text-stone-500 hover:text-stone-800">&times;</button>
+                </div>
+                <p id="modal-hackathon" class="text-sm text-indigo-600 font-semibold mt-1"></p>
+                <div id="modal-body" class="mt-4 text-stone-700 space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- DATA ---
+            const skillsData = {
+                labels: ['Machine Learning', 'Web & Blockchain', 'Programming', 'Developer Tools', 'Core CS'],
+                datasets: [{
+                    label: 'Proficiency',
+                    data: [90, 85, 95, 80, 85],
+                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(79, 70, 229, 1)'
+                }]
+            };
+
+            const timelineData = [
+                { type: 'training', date: 'Aug 2025', title: 'Basic Mechatronics Training', location: 'Siemens, Bangalore', description: 'Completed a 15-day basic mechatronics BMEX training covering sensors, actuators, and industrial automation.' },
+                { type: 'project', date: 'Apr 2025', title: 'Tech for Society Hackathon', location: 'Siemens & Nasscom', description: 'Top 40 nationwide. Designed a stock market-inspired platform for agriculture, connecting investors with farmers via SPVs.' },
+                { type: 'training', date: 'Nov 2024', title: 'Technical Training', location: 'Siemens Technical Academy, Mumbai', description: 'Completed a 20-day interdisciplinary training in electrical and mechanical engineering, including an industrial visit.' },
+                { type: 'research', date: 'Ongoing', title: 'HCI Research Collaborator', location: 'North Carolina State University', description: 'Developing a novel HCI device for speech recognition using throat sensor data and machine learning for Indian languages.' },
+                { type: 'research', date: 'Ongoing', title: 'Textbook Contributor', location: 'APJ Abdul Kalam Tech. University', description: 'Contributed to "Algorithmic Thinking with Python" by writing, proofreading, and developing code examples.' },
+                { type: 'project', date: 'Nov 2023', title: 'AI-Powered Legal Chatbot', location: 'Define Hackathon', description: 'Engineered a chatbot using LLMs and React.js to provide preliminary legal guidance.' },
+                { type: 'training', date: 'Nov 2023', title: 'Campus Ambassador', location: 'IEEE', description: 'Served as a Campus Ambassador for the \'15\' national-level IEEE convention.' }
+            ];
+
+            const projectsData = [
+                { 
+                    title: 'Agri-Finance Platform', 
+                    hackathon: 'Tech for Society Hackathon',
+                    details: `<p>In a multidisciplinary team, we designed a stock market-inspired platform for agriculture. The goal was to enable farmers to raise funds for high-value crops by creating Special Purpose Vehicles (SPVs).</p><p>The prototype connects investors with farmer groups, offering assured returns while ensuring risk diversification and sustainable funding for rural communities. Our innovative approach to solving rural funding challenges earned us recognition among the <strong>Top 40 teams nationwide</strong>.</p>`,
+                },
+                { 
+                    title: 'AI-Powered Legal Chatbot', 
+                    hackathon: 'Define Hackathon',
+                    details: `<p>This project involved engineering an AI-powered chatbot to provide preliminary legal guidance, making legal information more accessible.</p><p>I developed the front-end with React.js and integrated it with a Python backend that processed user queries and interacted with a Large Language Model (LLM) API to generate responses.</p>`,
+                },
+                { 
+                    title: 'Decentralized KYC App', 
+                    hackathon: 'Kochi Hackathon',
+                    details: `<p>I built a proof-of-concept decentralized Know Your Customer (KYC) application on the Ethereum blockchain to explore more secure and user-centric identity verification methods.</p><p>The project involved writing and testing smart contracts using Solidity and developing a user interface with React.js that allowed for seamless interaction with the deployed contracts on the blockchain.</p>`,
+                }
+            ];
+
+
+            // --- SKILLS CHART ---
+            const ctx = document.getElementById('skillsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: skillsData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    elements: {
+                        line: {
+                            borderWidth: 3
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                backdropColor: 'transparent',
+                                stepSize: 25,
+                                display: false
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.chart.data.labels[context.dataIndex];
+                                    const skillDetails = {
+                                        'Machine Learning': 'TensorFlow, PyTorch, Scikit-learn',
+                                        'Web & Blockchain': 'React, Node.js, Ethereum, Solidity',
+                                        'Programming': 'Python, JavaScript, Java, C++',
+                                        'Developer Tools': 'Git, GitHub, Docker, VS Code',
+                                        'Core CS': 'Algorithms, Data Structures, NLP'
+                                    };
+                                    return skillDetails[label] || label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- TIMELINE ---
+            const timelineContainer = document.getElementById('timeline-container');
+            const filterButtons = document.querySelectorAll('#timeline-filters button');
+
+            const renderTimeline = (filter = 'all') => {
+                timelineContainer.innerHTML = '<div class="absolute left-4 md:left-1/2 top-0 h-full w-0.5 bg-stone-300"></div>'; // Re-add line
+                const filteredData = timelineData.filter(item => filter === 'all' || item.type === filter);
+                
+                filteredData.forEach((item, index) => {
+                    const sideClass = index % 2 === 0 ? 'md:ml-auto md:pl-8' : 'md:mr-auto md:pr-8';
+                    const iconBg = {
+                        research: 'bg-blue-500',
+                        project: 'bg-green-500',
+                        training: 'bg-purple-500'
+                    }[item.type];
+                    const icon = {
+                        research: '🔬',
+                        project: '💻',
+                        training: '🎓'
+                    }[item.type];
+
+                    const timelineItem = document.createElement('div');
+                    timelineItem.className = `timeline-item mb-8 flex justify-between items-center w-full ${index % 2 === 0 ? 'flex-row-reverse md:flex-row' : 'flex-row-reverse'}`;
+                    timelineItem.dataset.type = item.type;
+                    
+                    timelineItem.innerHTML = `
+                        <div class="order-1 md:w-5/12"></div>
+                        <div class="z-20 flex items-center order-1 ${iconBg} shadow-xl w-8 h-8 rounded-full">
+                            <h1 class="mx-auto font-semibold text-lg text-white">${icon}</h1>
+                        </div>
+                        <div class="order-1 bg-white rounded-lg shadow-xl w-10/12 md:w-5/12 px-6 py-4">
+                            <p class="text-sm font-medium text-indigo-600">${item.date} - ${item.location}</p>
+                            <h3 class="mb-2 font-bold text-stone-800 text-lg">${item.title}</h3>
+                            <p class="text-sm leading-snug tracking-wide text-stone-600">${item.description}</p>
+                        </div>
+                    `;
+                    timelineContainer.appendChild(timelineItem);
+                });
+            };
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const filter = button.getAttribute('data-filter');
+                    renderTimeline(filter);
+                });
+            });
+
+            // --- PROJECTS ---
+            const projectsGrid = document.getElementById('projects-grid');
+            const modal = document.getElementById('project-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalHackathon = document.getElementById('modal-hackathon');
+            const modalBody = document.getElementById('modal-body');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+
+            projectsData.forEach(project => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all';
+                card.innerHTML = `
+                    <h3 class="text-xl font-bold mb-2">${project.title}</h3>
+                    <p class="text-indigo-600 font-semibold text-sm">${project.hackathon}</p>
+                    <p class="text-stone-600 mt-2">${project.details.split('</p>')[0].replace('<p>', '')}...</p>
+                `;
+                card.addEventListener('click', () => {
+                    modalTitle.textContent = project.title;
+                    modalHackathon.textContent = project.hackathon;
+                    modalBody.innerHTML = project.details;
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                });
+                projectsGrid.appendChild(card);
+            });
+
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+
+            modalCloseBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            // --- SCROLLSPY for NAV ---
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('nav a');
+
+            const activateNavLink = (id) => {
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.hash === `#${id}`);
+                });
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        activateNavLink(entry.target.id);
+                    }
+                });
+            }, { rootMargin: '-30% 0px -70% 0px' });
+
+            sections.forEach(section => observer.observe(section));
+
+            // Initial render
+            renderTimeline();
+        });
+    </script>
+</body>
+</html>
